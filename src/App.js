@@ -1,18 +1,40 @@
+/* global location */
+/* eslint no-restricted-globals: ["off", "location"] */
+
 import React, { Component } from 'react';
-import { Tree, treeUtil } from 'react-d3-tree';
+import { Tree } from 'react-d3-tree';
 
 class TreeStructure {
-  constructor(data) {
-      let node = new Node(data);
-      this.root = node;
+  constructor() {
+      this.root = null;
       this.allNodes = {};
-      this.allNodes[node.name] = node;
   }
   add(attributes, name) {
       let node = new Node(attributes);
-      let parent = this.allNodes[name];
-      parent.children.push(node);
-      this.allNodes[node.name] = node;
+      if(!this.root){
+        this.root = node;
+        this.allNodes[name] = node;
+      } else if (this.root.name==name){
+        this.root.children.push(node);
+        this.allNodes[node.name] = node;
+      } else{
+        let parent = this.allNodes[name];
+        parent.children.push(node);
+        node.parent = parent;
+        this.allNodes[node.name] = node;
+      }
+  }
+  remove(name){
+    let nodeToRemove = this.allNodes[name];
+    console.log(nodeToRemove);
+    let nodeToRemoveParent = nodeToRemove.parent;
+    console.log(nodeToRemoveParent);
+    for(var i=0; i< nodeToRemoveParent.children.length; i++){
+      let n = nodeToRemoveParent.children[i];
+      if(n==nodeToRemove){
+        nodeToRemoveParent.children.splice(i,1);
+      }
+    }
   }
 }
 
@@ -36,24 +58,25 @@ var gen = idMaker();
 class App extends Component {
   constructor(props){
     super(props);
-    this.tree = new TreeStructure({"aaa":"abaaac"});
     this.state = {
-        // data: this.tree.allNodes,
+        data: [],
+        tree: new TreeStructure(),
         forms : [],
         count : 1
     }
   }
 
-  onSubmit(event){
+  getInitialState() {
+    return {data: []};
+  }
+
+  onSubmit = (event) => {
     event.preventDefault();
-    let object = {}
+    const { tree } = this.state;
+    let object = {};
     object[this.state.attribute] = this.state.value;
-    let node = new Node(object);
-    let selectedNode = this.tree.allNodes[this.state.name];
-    console.log(this.state.data)
-    console.log(selectedNode);
-    selectedNode.children.push(node);
-    
+    tree.add(object, this.state.name);
+    this.setState({data:[{ name:tree.root.name, attributes:tree.root.attributes, parent:tree.root.parent, children:tree.root.children }]});
   }
 
   
@@ -69,6 +92,16 @@ class App extends Component {
     this.setState({name:event.target.value});
   }
 
+  onRemoveInputChange(event){
+    this.setState({nameToRemove: event.target.value});
+  }
+
+  onRemove(event){
+    event.preventDefault();
+    const {tree} = this.state;
+    tree.remove(this.state.nameToRemove);
+    this.setState({data:[{ name:tree.root.name, attributes:tree.root.attributes, parent:tree.root.parent, children:tree.root.children }]});
+  }
   addMore(event){
     event.preventDefault();
     this.setState({count: this.state.count+1})//on click add more forms
@@ -89,21 +122,33 @@ class App extends Component {
      return forms || null;
   }
 
+  renderTree(){
+    if(this.state.data.length>0){
+      return (
+        <div>
+          <Tree data={this.state.data} />
+        </div>
+      )
+    } else return null;
+  }
+
   render() {
     return (
       <div className="App">
-        <header className="App-header">
-          <h1 className="App-title">Tree Visualizer</h1>
+        <header>
+          <h1>Tree Visualizer</h1>
         </header>
         <form onSubmit={this.onSubmit.bind(this)}>
-          <label>Name of node you would like to add to</label>
+          <label>ID of node (this is the bold number on top of the node) you would like to add to: </label>
           <input type = "text" label="Name" placeholder="Name" onChange = {this.onNameInputChange.bind(this)} />
           {this.displayForm()}
-          <button onClick={this.addMore.bind(this)}>Add a Node attribute and value</button>
-          <button type="submit" className="btn btn-primary">Submit</button>
+          <button onClick={this.addMore.bind(this)}>Add a Node attribute and value </button>
+          <button type="submit">Submit</button>
         </form>
-        <div id="treeWrapper" style={{width: '1000em', height: '500em'}}>
-          <Tree data={this.state.data} />
+        <input type = "text" label="Name" placeholder="Name" onChange = {this.onRemoveInputChange.bind(this)} />
+        <button type="submit" onClick={this.onRemove.bind(this)}>Remove a Node by ID</button>
+        <div id="treeWrapper" style={{width: '2500', height: '2000'}}>
+          {this.renderTree()}
         </div>
       </div>
     );
