@@ -26,9 +26,7 @@ class TreeStructure {
   }
   remove(name){
     let nodeToRemove = this.allNodes[name];
-    console.log(nodeToRemove);
     let nodeToRemoveParent = nodeToRemove.parent;
-    console.log(nodeToRemoveParent);
     for(var i=0; i< nodeToRemoveParent.children.length; i++){
       let n = nodeToRemoveParent.children[i];
       if(n==nodeToRemove){
@@ -61,31 +59,14 @@ class App extends Component {
     this.state = {
         data: [],
         tree: new TreeStructure(),
-        forms : [],
-        count : 1
     }
-  }
-
-  getInitialState() {
-    return {data: []};
   }
 
   onSubmit = (event) => {
     event.preventDefault();
     const { tree } = this.state;
-    let object = {};
-    object[this.state.attribute] = this.state.value;
-    tree.add(object, this.state.name);
+    tree.add(JSON.parse(this.state.object),this.state.name);
     this.setState({data:[{ name:tree.root.name, attributes:tree.root.attributes, parent:tree.root.parent, children:tree.root.children }]});
-  }
-
-  
-  onAttributeInputChange(event){
-    this.setState({attribute:event.target.value});
-  }
-
-  onValueInputChange(event){
-    this.setState({value:event.target.value});
   }
 
   onNameInputChange(event){
@@ -95,31 +76,15 @@ class App extends Component {
   onRemoveInputChange(event){
     this.setState({nameToRemove: event.target.value});
   }
+  onObjectInputChange(event){
+    this.setState({object: event.target.value});
+  }
 
   onRemove(event){
     event.preventDefault();
     const {tree} = this.state;
     tree.remove(this.state.nameToRemove);
     this.setState({data:[{ name:tree.root.name, attributes:tree.root.attributes, parent:tree.root.parent, children:tree.root.children }]});
-  }
-  addMore(event){
-    event.preventDefault();
-    this.setState({count: this.state.count+1})//on click add more forms
-  }
-
-  displayForm(){
-     let forms = [];
-     for(let i = 0; i < this.state.count; i++){
-        forms.push(
-          <div key={i}>
-              <label>Attribute Name </label>
-              <input type = "text" label="Attribute" placeholder="Attribute" onChange = {this.onAttributeInputChange.bind(this)} />
-              <label>Attribute Value </label>
-              <input type = "text" label="Value" placeholder="Value" onChange = {this.onValueInputChange.bind(this)} />
-          </div>
-        )
-     }
-     return forms || null;
   }
 
   renderTree(){
@@ -140,12 +105,12 @@ class App extends Component {
         </header>
         <form onSubmit={this.onSubmit.bind(this)}>
           <label>ID of node (this is the bold number on top of the node) you would like to add to: </label>
-          <input type = "text" label="Name" placeholder="Name" onChange = {this.onNameInputChange.bind(this)} />
-          {this.displayForm()}
-          <button onClick={this.addMore.bind(this)}>Add a Node attribute and value </button>
+          <input type = "text" label="Name" placeholder="ID" onChange = {this.onNameInputChange.bind(this)} />
+          <label>Enter in a JSON literal (keys must be strings) in brackets: </label>
+          <input type = "text" label="Object" placeholder="Object" onChange = {this.onObjectInputChange.bind(this)} />
           <button type="submit">Submit</button>
         </form>
-        <input type = "text" label="Name" placeholder="Name" onChange = {this.onRemoveInputChange.bind(this)} />
+        <input type = "text" label="Name" placeholder="ID" onChange = {this.onRemoveInputChange.bind(this)} />
         <button type="submit" onClick={this.onRemove.bind(this)}>Remove a Node by ID</button>
         <div id="treeWrapper" style={{width: '2500', height: '2000'}}>
           {this.renderTree()}
